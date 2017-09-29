@@ -46,6 +46,14 @@ class Linear(Node):
 
         self.value = np.dot(X, W) + b
 
+    def backward(self):
+        self.gradients = {n: np.zeros_like(n.value) for n in self.inbound_nodes}
+        for n in self.outbound_nodes:
+            grad_cost = n.gradients[self]
+            self.gradients[self.inbound_nodes[0]] += np.dot(grad_cost, self.inbound_nodes[1].value.T)
+            self.gradients[self.inbound_nodes[1]] += np.dot(self.inbound_nodes[0].value.T, grad_cost)
+            self.gradients[self.inbound_nodes[2]] += np.sum(grad_cost, axis=0, keepdims=False)
+
 
 class Sigmoid(Node):
     def __int__(self, x):
@@ -58,6 +66,13 @@ class Sigmoid(Node):
         input_value = self.inbound_nodes[0].value
         self.value = self._sigmoid(input_value)
 
+    def backward(self):
+        self.gradients = {n: np.zeros_like(n.value) for n in self.inbound_nodes}
+        sigmoid = self.value
+        for n in self.outbound_nodes:
+            grad_cost = n.gradients[self]
+            self.gradients[self.inbound_nodes[0]] += sigmoid * (1 - sigmoid) * grad_cost
+
 
 class MSE(Node):
     def __int__(self, y, a):
@@ -66,8 +81,13 @@ class MSE(Node):
     def forward(self):
         output_value = self.inbound_nodes[0].value.reshape(-1, 1)
         target = self.inbound_nodes[1].value.reshape(-1, 1)
-        self.value = np.mean(np.square(target - output_value))
+        self.m = self.inbound_nodes[0].value.shape[0]
+        self.diff = target - output_value
+        self.value = np.mean(np.square(self.diff))
 
+    def backward(self):
+        self.gradients[self.inbound_nodes[0]] = (2 / self.m) * self.diff
+        self.gradients[self.inbound_nodes[1]] = (-2 / self.m) * self.diff
 
 
 
