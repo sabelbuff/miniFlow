@@ -8,10 +8,15 @@ class Node(object):
 
         self.value = []
 
+        self.gradients = {}
+
         for n in self.inbound_nodes:
             n.outbound_nodes.append(self)
 
     def forward(self):
+        raise NotImplemented
+
+    def backward(self):
         raise NotImplemented
 
 
@@ -23,27 +28,10 @@ class Input(Node):
         if value is not None:
             self.value = value
 
-
-class Add(Node):
-    def __int__(self, *inputs):
-        Node.__init__(self, [inputs])
-
-    def forward(self):
-        temp_sum = 0
-        for n in self.inbound_nodes:
-            temp_sum += n.value
-        self.value = temp_sum
-
-
-class Mul(Node):
-    def __int__(self, *inputs):
-        Node.__init__(self, [inputs])
-
-    def forward(self):
-        temp_prod = 1
-        for n in self.inbound_nodes:
-            temp_prod += n.value
-        self.value = temp_prod
+    def backward(self):
+        self.gradients = {self:None}
+        for n in self.outbound_nodes:
+            self.gradients[self] += n.gradients[self]
 
 
 class Linear(Node):
